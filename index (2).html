@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meme Coin Journal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8edf1;--panel:#f7f9fb;--ink:#13233a;--muted:#5d6b7c;--line:#cdd6df;--gain:#0b7a63;--loss:#bf3b2a;--flag:#f0c04a;
+--f:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1824;--panel:#172334;--ink:#e6edf5;--muted:#93a3b6;--line:#2a3a50;--gain:#3ecfa8;--loss:#ff7a66}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--f);font-variant-numeric:tabular-nums}
+.wrap{max-width:1100px;margin:0 auto;padding:28px 18px 60px}
+h1{font-size:clamp(2rem,5vw,3.2rem);line-height:1;margin:0 0 6px;font-weight:800;letter-spacing:-.03em}
+h2{font-size:1.15rem;margin:0 0 12px;font-weight:600}
+.sub{color:var(--muted);margin:0 0 24px;max-width:56ch}
+.grid{display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:20px}
+label{display:block;font-size:.85rem;color:var(--muted);margin:10px 0 3px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+button{font:inherit;font-weight:600;cursor:pointer;border:0;border-radius:6px;padding:9px 14px;background:var(--ink);color:var(--bg)}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button.small{padding:5px 10px;font-size:.85rem}
+.out{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.out dl{margin:0;display:grid;grid-template-columns:1fr auto;gap:5px 10px}
+.out dt{color:var(--muted)} .out dd{margin:0;font-weight:600;text-align:right}
+.rule{margin-top:12px;padding:10px 12px;border-left:4px solid var(--flag);background:color-mix(in srgb,var(--flag) 18%,transparent);border-radius:0 6px 6px 0;font-size:.92rem}
+.warn{color:var(--loss);font-weight:600;margin-top:8px;font-size:.92rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+.stat span{color:var(--muted);font-size:.82rem}
+.gain{color:var(--gain)} .loss{color:var(--loss)}
+.trade{border-top:1px solid var(--line);padding:12px 0}
+.trade:first-of-type{border-top:0}
+.trade h3{margin:0;font-size:1.05rem}
+.meta{color:var(--muted);font-size:.88rem}
+.levels{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0}
+.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-top:8px}
+.inline div{flex:1 1 110px}
+.inline label{margin-top:0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;padding:7px 6px;border-top:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;border-top:0}
+.scroll{overflow-x:auto}
+.err{background:color-mix(in srgb,var(--loss) 15%,transparent);border:1px solid var(--loss);padding:10px 14px;border-radius:8px;margin-bottom:16px}
+.empty{color:var(--muted);margin:0}
+form.d{display:inline}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Meme Coin Journal</h1>
+  <p class="sub">Size every trade before you take it, then log what happened. The goal is to survive long enough to learn.</p>
+
+  {% if error %}<div class="err" role="alert">{{ error }}</div>{% endif %}
+
+  <div class="grid">
+    <div>
+      <section class="panel" aria-labelledby="plan">
+        <h2 id="plan">Position planner</h2>
+        <label for="bal">Trading balance ($)</label>
+        <input id="bal" type="number" step="any" min="0" value="5">
+        <div class="row">
+          <div><label for="pos">Per trade (% of balance)</label><input id="pos" type="number" step="any" min="1" max="100" value="10"></div>
+          <div><label for="stop">Stop-loss (%)</label><input id="stop" type="number" step="any" min="1" max="99" value="30"></div>
+        </div>
+        <div class="row">
+          <div><label for="tx">Target (x entry)</label><input id="tx" type="number" step="any" min="1.1" value="2"></div>
+          <div><label for="fee">Fees + slippage, round trip (%)</label><input id="fee" type="number" step="any" min="0" value="4"></div>
+        </div>
+        <div class="out" aria-live="polite">
+          <dl>
+            <dt>Position size</dt><dd id="o-size">–</dd>
+            <dt>Max loss if stopped out</dt><dd id="o-loss" class="loss">–</dd>
+            <dt>Needs to rise just to break even</dt><dd id="o-be">–</dd>
+            <dt>Balance left after worst case</dt><dd id="o-left">–</dd>
+          </dl>
+          <div class="rule" id="o-rule"></div>
+          <div class="warn" id="o-warn"></div>
+          <p><button type="button" class="ghost small" id="use">Use these numbers in the trade form</button></p>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="new">
+        <h2 id="new">Log a new trade</h2>
+        <form method="post" action="{{ url_for('open_trade') }}">
+          <label for="token">Token</label>
+          <input id="token" name="token" required placeholder="e.g. BONK">
+          <label for="entry_price">Entry price ($)</label>
+          <input id="entry_price" name="entry_price" type="number" step="any" min="0" required>
+          <div class="row">
+            <div><label for="size_usd">Size ($)</label><input id="size_usd" name="size_usd" type="number" step="any" min="0" required></div>
+            <div><label for="stop_pct">Stop-loss (%)</label><input id="stop_pct" name="stop_pct" type="number" step="any" min="0" value="30" required></div>
+          </div>
+          <label for="target_x">Target (x entry)</label>
+          <input id="target_x" name="target_x" type="number" step="any" min="0" value="2" required>
+          <label for="notes">Why this trade?</label>
+          <input id="notes" name="notes" placeholder="One line. Future you will want it.">
+          <p><button type="submit">Open trade</button></p>
+        </form>
+      </section>
+    </div>
+
+    <div>
+      <div class="stats">
+        <div class="stat"><b class="{{ 'gain' if stats.total > 0 else 'loss' if stats.total < 0 }}">{{ stats.total|usd }}</b><span>Total profit/loss</span></div>
+        <div class="stat"><b>{{ '%.0f'|format(stats.win_rate) }}%</b><span>Win rate ({{ stats.count }} closed)</span></div>
+        <div class="stat"><b class="gain">{{ stats.avg_win|usd }}</b><span>Average win</span></div>
+        <div class="stat"><b class="loss">{{ stats.avg_loss|usd }}</b><span>Average loss</span></div>
+        <div class="stat"><b>{{ stats.expectancy|usd }}</b><span>Per trade, on average</span></div>
+      </div>
+
+      <section class="panel" aria-labelledby="open">
+        <h2 id="open">Open trades</h2>
+        {% for t in open_trades %}
+        <div class="trade">
+          <h3>{{ t.token }} <span class="meta">· {{ t.size_usd|usd }} in at ${{ t.entry_price|price }}</span></h3>
+          <div class="levels">
+            <span class="loss">Stop ${{ (t.entry_price * (1 - t.stop_pct/100))|price }}</span>
+            <span class="gain">{{ t.target_x }}x at ${{ (t.entry_price * t.target_x)|price }}</span>
+          </div>
+          {% if t.target_x >= 2 %}
+          <div class="rule">At 2x, sell half (about {{ (t.size_usd/2)|usd }} of the position's value at 2x) to take your stake out. The rest rides for free.</div>
+          {% endif %}
+          {% if t.notes %}<div class="meta">“{{ t.notes }}”</div>{% endif %}
+          <form method="post" action="{{ url_for('close_trade', trade_id=t.id) }}" class="inline">
+            <div><label for="x{{t.id}}">Exit price ($)</label><input id="x{{t.id}}" name="exit_price" type="number" step="any" min="0" required></div>
+            <div><label for="f{{t.id}}">Fees paid ($)</label><input id="f{{t.id}}" name="fees_usd" type="number" step="any" min="0" value="0"></div>
+            <button type="submit" class="small">Close trade</button>
+          </form>
+        </div>
+        {% else %}
+        <p class="empty">No open trades. Plan one on the left, then log it here.</p>
+        {% endfor %}
+      </section>
+
+      <section class="panel" aria-labelledby="hist">
+        <h2 id="hist">History</h2>
+        {% if closed %}
+        <div class="scroll"><table>
+          <thead><tr><th>Token</th><th>In</th><th>Out</th><th>Size</th><th>Result</th><th>Closed</th><th></th></tr></thead>
+          <tbody>
+          {% for t in closed %}
+          <tr>
+            <td>{{ t.token }}</td><td>${{ t.entry_price|price }}</td><td>${{ t.exit_price|price }}</td>
+            <td>{{ t.size_usd|usd }}</td>
+            <td class="{{ 'gain' if t.pnl > 0 else 'loss' }}">{{ t.pnl|usd }}</td>
+            <td class="meta">{{ t.closed_at }}</td>
+            <td><form class="d" method="post" action="{{ url_for('delete_trade', trade_id=t.id) }}" onsubmit="return confirm('Delete this trade?')"><button class="ghost small" aria-label="Delete {{ t.token }} trade">Delete</button></form></td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% else %}
+        <p class="empty">Closed trades show up here with your results.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const money = v => (v < 0 ? "-" : "") + "$" + Math.abs(v).toFixed(2);
+function plan() {
+  const bal = +$("bal").value, pos = +$("pos").value, stop = +$("stop").value,
+        tx = +$("tx").value, fee = +$("fee").value;
+  if (!(bal > 0 && pos > 0 && stop > 0)) return;
+  const size = bal * pos / 100;
+  const feeCost = size * fee / 100;
+  const maxLoss = size * stop / 100 + feeCost;
+  const be = fee / (1 - fee / 100);
+  $("o-size").textContent = money(size);
+  $("o-loss").textContent = money(maxLoss);
+  $("o-be").textContent = "+" + be.toFixed(1) + "%";
+  $("o-left").textContent = money(bal - maxLoss);
+  $("o-rule").textContent = tx >= 2
+    ? "At 2x, sell half of the position to take your original " + money(size) + " out. What's left is free money."
+    : "Set the target at 2x or higher so you can take your stake out when it hits.";
+  const warn = [];
+  if (pos > 25) warn.push("Over 25% of your balance on one meme coin is how accounts get wiped.");
+  if (maxLoss / bal > 0.1) warn.push("One losing trade would cost you " + (maxLoss / bal * 100).toFixed(0) + "% of your balance.");
+  if (fee * 2 > stop) warn.push("Fees are large relative to your stop-loss. This trade size may be too small to be worth it.");
+  $("o-warn").textContent = warn.join(" ");
+  window._plan = { size, stop, tx };
+}
+["bal","pos","stop","tx","fee"].forEach(id => $(id).addEventListener("input", plan));
+$("use").addEventListener("click", () => {
+  if (!window._plan) return;
+  $("size_usd").value = window._plan.size.toFixed(2);
+  $("stop_pct").value = window._plan.stop;
+  $("target_x").value = window._plan.tx;
+  $("token").focus();
+});
+plan();
+</script>
+</body>
+</html>
